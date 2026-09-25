@@ -4,6 +4,11 @@
 
 ### Fixed
 
+- Close SQLite fixture connections deterministically so delayed ResourceWarnings
+  cannot contaminate unrelated CLI JSON-output assertions in CI.
+- Keep all CI matrix jobs running after a failure for complete diagnostics, and
+  update checkout/setup-python to pinned Node.js 24 action releases.
+
 - `status` now returns exit code 3 when a configured source has never been collected,
   is stale, or last reported partial/unavailable coverage, even if the latest overall
   cycle succeeded. State snapshots use their own configured cadence.
