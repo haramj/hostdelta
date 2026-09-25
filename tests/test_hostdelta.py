@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -118,6 +119,30 @@ class StoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             Store(path)
         self.assertFalse(path.exists())
+
+
+class DeploymentReviewWalkthroughTests(unittest.TestCase):
+    def test_synthetic_walkthrough_compares_state_and_event_window(self):
+        root = Path(__file__).resolve().parents[1]
+        env = os.environ.copy()
+        env["PYTHONPATH"] = os.pathsep.join(filter(None, (str(root / "src"), env.get("PYTHONPATH"))))
+        result = subprocess.run(
+            [sys.executable, "examples/deployment_review.py"],
+            cwd=root,
+            env=env,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("SYNTHETIC DEPLOYMENT REVIEW", result.stdout)
+        self.assertRegex(result.stdout, r"State comparison: .* → .*")
+        self.assertIn("1. Compare the saved before/after service observations:", result.stdout)
+        self.assertIn("SERVICES: 1 changed", result.stdout)
+        self.assertIn("EVENT TIMELINE", result.stdout)
+        self.assertIn("synthetic deployment started", result.stdout)
+        self.assertIn("Snapshots are observations, not VM restore points", result.stdout)
 
 
 class RequestTests(unittest.TestCase):

@@ -138,6 +138,8 @@ hostdelta brief --since 30m
 A HostDelta snapshot records observed host state; it is not a VM snapshot or a
 restore point. Use fresh labels for each deployment. The event window should cover
 your deployment; a diff alone cannot reveal a transient failure that recovered.
+To practice this flow without collecting host data or deploying anything, run the
+[synthetic deployment review walkthrough](examples/deployment_review.py).
 
 ### Give an operations agent context
 
