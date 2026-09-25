@@ -46,6 +46,33 @@ collection. A stale collector heartbeat or missing source coverage is not interp
 as a healthy host. `status` reports collection readiness, not a replacement for
 reading findings and incidents.
 
+## Collection readiness
+
+`hostdelta status --json` exits 0 only when the heartbeat and every source enabled
+in the last saved collector configuration are recent and successful. Otherwise it
+exits 3. The JSON `ready` field matches this decision; `fresh` describes the heartbeat
+only. Neither field asserts that the host is healthy or that a daemon PID is alive.
+A successful one-shot `collect` can establish readiness too.
+
+Each source includes `configured`, `fresh`, `age_seconds`, `max_age_seconds` and
+`reason`, alongside its existing `status` and `warnings`. Freshness allows up to
+three configured collection intervals; state snapshots allow three times the larger
+of the snapshot and collection intervals. With defaults, those thresholds are
+90 seconds and 45 minutes. Sources
+with no events can still be ready if their collection completed successfully.
+
+Reasons distinguish `ok`, `never_collected`, `stale`, `source_unhealthy`,
+`clock_skew` and `invalid_timestamp`. The heartbeat can also report `stopped` or
+`last_cycle_unhealthy`. Configured sources with no recorded run appear explicitly
+as unavailable. Historical sources removed from configuration remain visible with
+`configured: false` and `reason: not_configured`, and do not block readiness.
+The original source status and warnings remain available even when the reason is
+staleness. Configuration is saved by collection, so editing a file alone does not
+change the assessed source set.
+
+These checks describe the latest observations, not complete coverage of an arbitrary
+historical window. Continue to inspect brief coverage and incident evidence.
+
 ## Restarts and outage intervals
 
 List only services that are expected to remain active in `services`. HostDelta

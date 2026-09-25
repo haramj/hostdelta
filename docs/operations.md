@@ -83,7 +83,10 @@ journalctl --user -u hostdelta-collector.service --since '1 hour ago'
 that the host is healthy. A one-shot `collect` also updates the heartbeat. Inspect
 per-source statuses, warnings and incident findings. `unavailable` and `partial`
 are distinct from an empty successful result. Configuration changes can leave old
-source/checkpoint entries in status for diagnosis.
+source/checkpoint entries in status for diagnosis; those sources are marked
+`configured: false` and do not block readiness. Use `status.ready` and its exit code
+for collection checks, and inspect each source's `reason` when readiness fails.
+See [readiness semantics](collection.md#collection-readiness) for thresholds and fields.
 
 The daemon logs structured lifecycle/source-completion messages to stderr. systemd
 captures them without contaminating CLI JSON stdout. SIGTERM requests a graceful

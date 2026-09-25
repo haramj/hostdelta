@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- `status` now returns exit code 3 when a configured source has never been collected,
+  is stale, or last reported partial/unavailable coverage, even if the latest overall
+  cycle succeeded. State snapshots use their own configured cadence.
+- Future-dated, invalid and stopped collector heartbeats cannot establish readiness.
+
+### Added
+
+- Additive status JSON fields: `ready`, `heartbeat_assessment`, and per-source
+  `configured`, `fresh`, `age_seconds`, `max_age_seconds` and `reason`.
+- A contributor roadmap with independently scoped community tasks.
+
 ## 0.2.0
 
 ### Added
