@@ -230,6 +230,7 @@ Help shape HostDelta through code, documentation, bug reports, and real-world
 Linux, OpenStack, or Proxmox testing. You do not need to contribute code to make
 a difference. First-time open-source contributors are welcome.
 
+- Browse the [contributor roadmap](docs/contributor-roadmap.md) for scoped work and dependencies.
 - Start with [good first issues](https://github.com/haramj/hostdelta/labels/good%20first%20issue).
 - Explore [help wanted](https://github.com/haramj/hostdelta/labels/help%20wanted) for testing and larger tasks.
 - Ask questions, share ideas, or describe your setup in [Discussions](https://github.com/haramj/hostdelta/discussions).

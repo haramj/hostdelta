@@ -5,6 +5,7 @@ import hashlib
 import json
 
 from .incidents import transition
+from .readiness import assess
 from .model import stamp, utcnow
 from .telemetry import redact
 
@@ -105,7 +106,10 @@ class Archive:
 
     def status(self):
         rows = self.db.execute("SELECT r.* FROM source_runs r JOIN (SELECT source,MAX(id) id FROM source_runs GROUP BY source) latest ON r.id=latest.id ORDER BY r.source").fetchall()
-        return {"sources": [{"source": r["source"], "at": r["at"], "status": r["status"], **json.loads(r["payload"])} for r in rows],
+        result = {"sources": [{"source": r["source"], "at": r["at"], "status": r["status"], **json.loads(r["payload"])} for r in rows],
                 "events": self.db.execute("SELECT COUNT(*) FROM archive_events").fetchone()[0],
                 "open_incidents": self.db.execute("SELECT COUNT(*) FROM incidents WHERE closed_at IS NULL").fetchone()[0],
                 "daemon": self.store.setting("daemon", {}), "retention_floor": self.store.setting("retention_floor")}
+
+        result.update(assess(result["sources"], result["daemon"], self.store.setting("collector_config", {}), utcnow()))
+        return result

@@ -250,11 +250,8 @@ fi''')
             return 0
         if args.command == "status":
             data = Archive(store).status()
-            heartbeat = data["daemon"]
-            last = heartbeat.get("last_cycle_at")
-            data["fresh"] = bool(last) and not heartbeat.get("stopped_at") and (utcnow() - parse_time(last)).total_seconds() <= heartbeat.get("interval_seconds", 30) * 3
             emit({"schema_version": 1, "type": "status", **data}, args.json, json.dumps(data, indent=2))
-            return 0 if data["fresh"] and heartbeat.get("healthy") else 3
+            return 0 if data["ready"] else 3
         if args.command in ("events", "incidents"):
             until = utcnow()
             since = parse_time(args.since, until)

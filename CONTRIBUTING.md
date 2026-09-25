@@ -4,6 +4,10 @@ HostDelta is built around recoverable local evidence, explicit uncertainty and a
 small dependency footprint. Contributions should improve operational usefulness
 without claiming observations the collectors cannot establish.
 
+See the [contributor roadmap](docs/contributor-roadmap.md) for concrete starting
+points, acceptance criteria and dependencies. Check linked PRs and comments before
+starting so contributors can avoid duplicating work.
+
 ## Your first contribution
 
 Documentation, reproducible bug reports, sanitized test fixtures, and real-world
