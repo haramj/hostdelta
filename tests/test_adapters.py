@@ -1,7 +1,10 @@
 from contextlib import contextmanager
+import io
 import json
 import os
 import unittest
+import urllib.error
+from email.message import Message
 from unittest.mock import patch
 
 from hostdelta.adapters import HTTPClient, ProbeError, poll, bounded_poll
@@ -93,17 +96,18 @@ class HTTPIntegrationTests(unittest.TestCase):
             def do_GET(self):
                 calls.append((self.path, self.headers.get("X-Auth-Token")))
                 if self.path == "/redirect":
-                    self.send_response(302)
-                    self.send_header("Location", "/should-not-receive-token")
-                    self.end_headers()
+                    status = 302
                 elif self.path == "/broken":
-                    self.send_response(503)
-                    self.end_headers()
-                    self.wfile.write(b'secret-debug-body')
+                    status = 503
                 else:
-                    self.send_response(200)
-                    self.end_headers()
-                    self.wfile.write(b'{"versions":[]}')
+                    status = {"/unauthorized": 401, "/forbidden": 403}.get(self.path, 200)
+                self.send_response(status)
+                if self.path == "/redirect":
+                    self.send_header("Location", "/should-not-receive-token")
+                payload = b'{"versions":[]}' if status == 200 else b"FAKE-response-body"
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
         server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
@@ -125,17 +129,54 @@ class HTTPIntegrationTests(unittest.TestCase):
 
     def test_redirect_cannot_forward_token(self):
         with self.server() as (base, calls):
-            with self.assertRaises(ProbeError) as failure:
-                HTTPClient({"allow_http": True}).request(base + "/redirect", {"X-Auth-Token": "secret"})
-        self.assertEqual(failure.exception.code, "http_302")
-        self.assertEqual(len(calls), 1)
+            for _ in range(3):
+                with self.assertRaises(ProbeError) as failure:
+                    HTTPClient({"allow_http": True}).request(base + "/redirect", {"X-Auth-Token": "FAKE-request-secret"})
+                self.assertEqual(failure.exception.code, "http_302")
+                self.assertNotIn("FAKE-request-secret", str(failure.exception))
+        self.assertEqual(len(calls), 3)
+        self.assertTrue(all(path == "/redirect" and token == "FAKE-request-secret" for path, token in calls))
 
-    def test_error_response_body_is_not_exposed(self):
+    def test_repeated_http_errors_are_closed_and_sanitized(self):
+        statuses = {"/unauthorized": (401, "unknown"), "/forbidden": (403, "unknown"), "/broken": (503, "down")}
         with self.server() as (base, calls):
-            with self.assertRaises(ProbeError) as failure:
-                HTTPClient({"allow_http": True}).request(base + "/broken")
-        self.assertEqual(failure.exception.health, "down")
-        self.assertNotIn("secret", str(failure.exception))
+            client = HTTPClient({"allow_http": True})
+            for path, (status, health) in statuses.items():
+                for _ in range(3):
+                    with self.assertRaises(ProbeError) as failure:
+                        client.request(base + path, {"X-Auth-Token": "FAKE-request-secret"})
+                    self.assertEqual(failure.exception.code, f"http_{status}")
+                    self.assertEqual(failure.exception.health, health)
+                    self.assertNotIn("FAKE-request-secret", str(failure.exception))
+                    self.assertNotIn("FAKE-response-body", str(failure.exception))
+        self.assertEqual(len(calls), 9)
+        self.assertTrue(all(token == "FAKE-request-secret" for _, token in calls))
+
+    def test_http_error_fixture_response_is_closed(self):
+        class CloseTrackingBody(io.BytesIO):
+            pass
+
+        for status in (401, 403, 302, 503):
+            body = CloseTrackingBody(b"FAKE-response-body")
+            response = urllib.error.HTTPError(
+                "http://identity.test/probe",
+                status,
+                "synthetic failure",
+                Message(),
+                body,
+            )
+            client = HTTPClient({"allow_http": True})
+            with patch.object(client.opener, "open", side_effect=response):
+                with self.assertRaises(ProbeError) as failure:
+                    client.request(
+                        "http://identity.test/probe",
+                        {"X-Auth-Token": "FAKE-request-secret"},
+                    )
+            self.assertTrue(body.closed, f"HTTP {status} response body was not closed")
+            self.assertEqual(failure.exception.code, f"http_{status}")
+            self.assertNotIn("FAKE-response-body", str(failure.exception))
+            self.assertNotIn("identity.test", str(failure.exception))
+            self.assertNotIn("FAKE-request-secret", str(failure.exception))
 
 
 if __name__ == "__main__":
