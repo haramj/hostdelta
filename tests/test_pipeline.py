@@ -303,6 +303,31 @@ class TCPTests(unittest.TestCase):
         self.assertFalse(event["attributes"]["handshake_confirmed"])
         self.assertEqual(event["kind"], "tcp_flow_new")
 
+    def test_conntrack_ipv6_keeps_original_tuple_for_new_and_destroy(self):
+        original = "src=2001:db8::1 dst=2001:db8::2 sport=40000 dport=443"
+        reply = "src=2001:db8::2 dst=2001:db8::1 sport=443 dport=40000"
+        for action, expected_kind in (("NEW", "tcp_flow_new"), ("DESTROY", "tcp_flow_destroyed")):
+            with self.subTest(action=action):
+                event = parse_conntrack(f"[1790000000.123456] [{action}] tcp 6 120 ESTABLISHED {original} {reply}", action)
+                self.assertEqual(
+                    {key: event["attributes"][key] for key in ("src", "dst", "sport", "dport")},
+                    {"src": "2001:db8::1", "dst": "2001:db8::2", "sport": 40000, "dport": 443},
+                )
+                self.assertEqual(event["attributes"]["direction"], "unknown")
+                self.assertFalse(event["attributes"]["handshake_confirmed"])
+                self.assertEqual(event["kind"], expected_kind)
+
+    def test_conntrack_rejects_incomplete_or_invalid_tuple(self):
+        malformed = (
+            "[1790000000.123456] [NEW] tcp 6 120 SYN_SENT src=2001:db8::1 dst=2001:db8::2 sport=40000",
+            "[1790000000.123456] [NEW] tcp 6 120 SYN_SENT src=not-an-ip dst=2001:db8::2 sport=40000 dport=443",
+            "[1790000000.123456] [NEW] tcp 6 120 SYN_SENT src=2001:db8::1 dst=2001:db8::2 sport=65536 dport=443",
+            "[1790000000.123456] [NEW] tcp 6 120 SYN_SENT src=2001:db8::1 dst=2001:db8::2 sport=40000 dport=-1",
+        )
+        for line in malformed:
+            with self.subTest(line=line), self.assertRaises(ValueError):
+                parse_conntrack(line, "malformed")
+
     def test_tcp_failure_never_infers_disappearance(self):
         with tempfile.TemporaryDirectory() as directory:
             result = health.tcp({"sockets": {"existing": {}}}, root=Path(directory))
