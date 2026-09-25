@@ -49,7 +49,9 @@ class HTTPClient:
                 return parsed, response.headers
         except urllib.error.HTTPError as exc:
             # Never expose response bodies, URLs containing secrets, or request headers.
-            raise ProbeError(f"http_{exc.code}", "down" if exc.code >= 500 else "unknown") from None
+            status = exc.code
+            exc.close()
+            raise ProbeError(f"http_{status}", "down" if status >= 500 else "unknown") from None
         except urllib.error.URLError as exc:
             code = "tls_verification_failed" if isinstance(exc.reason, ssl.SSLError) else "connection_failed"
             raise ProbeError(code, "unknown" if code.startswith("tls") else "down") from None
