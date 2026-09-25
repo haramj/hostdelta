@@ -1,5 +1,6 @@
 """Exercise actual subprocess lifetime and durable recovery without host mutation."""
 
+from contextlib import closing
 import json
 import os
 from pathlib import Path
@@ -34,7 +35,7 @@ class ProcessTests(unittest.TestCase):
                 deadline = time.monotonic() + 10
                 count = 0
                 while time.monotonic() < deadline:
-                    with sqlite3.connect(state / "state.sqlite3") as db:
+                    with closing(sqlite3.connect(state / "state.sqlite3")) as db:
                         count = db.execute("SELECT COUNT(*) FROM archive_events").fetchone()[0]
                     if count == 1:
                         break
@@ -62,7 +63,7 @@ class ProcessTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "state"
             root.mkdir(mode=0o700)
-            with sqlite3.connect(root / "state.sqlite3") as db:
+            with closing(sqlite3.connect(root / "state.sqlite3")) as db, db:
                 db.executescript("CREATE TABLE settings(key TEXT PRIMARY KEY,value TEXT NOT NULL); PRAGMA user_version=1;")
                 db.execute("INSERT INTO settings VALUES (?,?)", ("consumer:legacy", json.dumps("2026-01-01T00:00:00.000000+00:00")))
             store = Store(root)
