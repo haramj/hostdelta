@@ -23,3 +23,7 @@ hostdelta = "hostdelta.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.bandit]
+# Collectors intentionally run fixed argv lists without a shell and resolve tools such as conntrack from PATH.
+skips = ["B404", "B603", "B607"]

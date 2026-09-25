@@ -3,7 +3,11 @@ on: [push, pull_request]
 permissions:
   contents: read
 jobs:
+  pre-check:
+    uses: ./.github/workflows/pre-check.yml
+
   tests:
+    needs: pre-check
     strategy:
       fail-fast: false
       matrix:

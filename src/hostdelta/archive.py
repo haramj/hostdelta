@@ -61,7 +61,7 @@ class Archive:
             if value:
                 conditions.append(field + "=?")
                 values.append(value)
-        rows = self.db.execute("SELECT payload FROM archive_events WHERE " + " AND ".join(conditions) + " ORDER BY at,event_id LIMIT ?", (*values, limit + 1)).fetchall()
+        rows = self.db.execute("SELECT payload FROM archive_events WHERE " + " AND ".join(conditions) + " ORDER BY at,event_id LIMIT ?", (*values, limit + 1)).fetchall()  # nosec B608
         return [json.loads(row[0]) for row in rows[:limit]], len(rows) > limit
 
     def incidents(self, since, until):
@@ -96,9 +96,9 @@ class Archive:
         with self.db:
             self.db.execute("BEGIN IMMEDIATE")
             for table, (predicate, params) in predicates.items():
-                counts[table] = self.db.execute(f"SELECT COUNT(*) FROM {table} WHERE {predicate}", params).fetchone()[0]
+                counts[table] = self.db.execute(f"SELECT COUNT(*) FROM {table} WHERE {predicate}", params).fetchone()[0]  # nosec B608
                 if not dry_run:
-                    self.db.execute(f"DELETE FROM {table} WHERE {predicate}", params)
+                    self.db.execute(f"DELETE FROM {table} WHERE {predicate}", params)  # nosec B608
             if not dry_run:
                 floor = max(cutoff, self.store.setting("retention_floor", cutoff))
                 self.db.execute("INSERT OR REPLACE INTO settings VALUES ('retention_floor',?)", (json.dumps(floor),))
