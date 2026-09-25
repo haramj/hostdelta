@@ -1,14 +1,14 @@
-from contextlib import redirect_stdout, redirect_stderr
-from datetime import datetime, timedelta, timezone
 import gzip
 import io
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from unittest.mock import patch
 
 from hostdelta import cli, collect, events, requests

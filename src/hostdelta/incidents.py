@@ -1,7 +1,7 @@
 """Conservative sampled health state machine; timestamps are bounds, never invented precision."""
 
-from datetime import datetime
 import hashlib
+from datetime import datetime
 
 
 def transition(previous, observation, failure_threshold=2, recovery_threshold=2, max_gap=90):

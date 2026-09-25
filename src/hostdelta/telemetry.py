@@ -3,9 +3,6 @@
 The SDK has no global logging configuration or network side effects.
 """
 
-from contextlib import contextmanager
-from contextvars import ContextVar
-from datetime import datetime, timezone
 import hashlib
 import json
 import logging
@@ -14,11 +11,15 @@ import re
 import sys
 import time
 import uuid
+from contextlib import contextmanager
+from contextvars import ContextVar
+from datetime import datetime, timezone
+from types import MappingProxyType
 from urllib.parse import urlsplit, urlunsplit
 
-from .model import clean, stamp, utcnow
+from .model import clean, stamp
 
-CONTEXT = ContextVar("hostdelta_log_context", default={})
+CONTEXT = ContextVar("hostdelta_log_context", default=MappingProxyType({}))
 SECRET = re.compile(r"password|passwd|secret|token|authorization|cookie|api.?key|private.?key|credential|request.?body|response.?body", re.I)
 LEVELS = {"TRACE": "info", "DEBUG": "info", "INFO": "info", "NOTICE": "info", "WARN": "warning", "WARNING": "warning", "ERROR": "critical", "FATAL": "critical", "CRITICAL": "critical"}
 

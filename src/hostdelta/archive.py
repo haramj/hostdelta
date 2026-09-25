@@ -1,12 +1,12 @@
 """Transactional ingestion: events, source offsets, and health transitions commit together."""
 
-from datetime import timedelta
 import hashlib
 import json
+from datetime import timedelta
 
 from .incidents import transition
-from .readiness import assess
 from .model import stamp, utcnow
+from .readiness import assess
 from .telemetry import redact
 
 

@@ -1,9 +1,7 @@
 """Exercise actual subprocess lifetime and durable recovery without host mutation."""
 
-from contextlib import closing
 import json
 import os
-from pathlib import Path
 import signal
 import sqlite3
 import subprocess
@@ -11,6 +9,8 @@ import sys
 import tempfile
 import time
 import unittest
+from contextlib import closing
+from pathlib import Path
 
 from hostdelta.archive import Archive
 from hostdelta.model import stamp, utcnow

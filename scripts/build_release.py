@@ -3,11 +3,11 @@
 
 import gzip
 import hashlib
-from pathlib import Path
 import re
 import subprocess
 import sys
 import tarfile
+from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 version = re.search(r'__version__ = "([^"]+)"', (root / "src/hostdelta/__init__.py").read_text())[1]

@@ -1,8 +1,8 @@
 """Evidence-first briefing, shared by terminal and automation consumers."""
 
+import json
 from collections import Counter
 from datetime import datetime
-import json
 
 from .model import clean, compare
 

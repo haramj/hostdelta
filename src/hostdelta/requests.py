@@ -1,14 +1,14 @@
 """Bounded, local HTTP access-log analysis. No bodies, queries or headers are retained."""
 
-from collections import Counter
-from datetime import datetime, timezone
 import gzip
 import ipaddress
 import json
-from pathlib import Path
 import re
 import stat
 import zlib
+from collections import Counter
+from datetime import datetime
+from pathlib import Path
 from urllib.parse import urlsplit
 
 from .model import stamp

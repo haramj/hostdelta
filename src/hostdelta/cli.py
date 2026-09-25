@@ -1,22 +1,21 @@
 """CLI contract: JSON stdout, errors on stderr, no implicit cursor acknowledgement."""
 
 import argparse
-from contextlib import contextmanager
-from datetime import timedelta
 import fcntl
 import json
 import os
-from pathlib import Path
 import platform
 import re
 import shlex
 import shutil
 import sqlite3
 import sys
+from contextlib import contextmanager
+from datetime import timedelta
+from pathlib import Path
 
-from . import __version__
+from . import __version__, config, daemon
 from .archive import Archive
-from . import config, daemon
 from .brief import build, render, render_diff
 from .collect import capture
 from .demo import report as demo_report

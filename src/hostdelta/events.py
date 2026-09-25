@@ -1,10 +1,10 @@
 """Extract supported event types; preserve source references, not raw secret-bearing logs."""
 
-from datetime import datetime, timezone
 import json
 import os
 import re
 import subprocess
+from datetime import datetime, timezone
 
 from .model import stamp
 from .process import bounded_run

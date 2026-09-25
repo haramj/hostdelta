@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """A runnable application instrumentation example; emits real JSONL to stdout."""
 import logging
+
 from hostdelta.telemetry import StructuredLogger, bind_context
 
 log = StructuredLogger("backup-worker", environment="development", version="1.0.0")

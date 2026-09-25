@@ -1,13 +1,13 @@
-from contextlib import contextmanager
 import io
 import json
 import os
 import unittest
 import urllib.error
+from contextlib import contextmanager
 from email.message import Message
 from unittest.mock import patch
 
-from hostdelta.adapters import HTTPClient, ProbeError, poll, bounded_poll
+from hostdelta.adapters import HTTPClient, ProbeError, bounded_poll, poll
 
 
 class FakeClient:
@@ -78,8 +78,8 @@ class AdapterTests(unittest.TestCase):
 class HTTPIntegrationTests(unittest.TestCase):
     @contextmanager
     def server(self):
-        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
         import threading
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
         calls = []
         class Handler(BaseHTTPRequestHandler):
             def log_message(self, *args):

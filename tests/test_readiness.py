@@ -1,15 +1,16 @@
-from datetime import timedelta
-from pathlib import Path
-import tempfile
-import unittest
-from hostdelta.readiness import assess
-from hostdelta.model import utcnow, stamp
-from hostdelta.archive import Archive
-from hostdelta.store import Store
-from hostdelta import cli
 import io
 import json
+import tempfile
+import unittest
 from contextlib import redirect_stdout
+from datetime import timedelta
+from pathlib import Path
+
+from hostdelta import cli
+from hostdelta.archive import Archive
+from hostdelta.model import stamp, utcnow
+from hostdelta.readiness import assess
+from hostdelta.store import Store
 
 
 class ReadinessTests(unittest.TestCase):

@@ -1,16 +1,12 @@
-from contextlib import redirect_stdout
-from datetime import timedelta
 import io
 import json
-import logging
-import os
-from pathlib import Path
-import sqlite3
 import tempfile
 import unittest
+from datetime import timedelta
+from pathlib import Path
 from unittest.mock import patch
 
-from hostdelta import config, daemon, health, tail, cli
+from hostdelta import config, daemon, health, tail
 from hostdelta.archive import Archive
 from hostdelta.conntrack import parse as parse_conntrack
 from hostdelta.incidents import transition

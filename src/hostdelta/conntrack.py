@@ -1,12 +1,12 @@
 """Optional Linux netfilter event stream; no packet payloads or automatic elevation."""
 
-from datetime import datetime, timezone
 import hashlib
 import os
 import re
 import selectors
 import subprocess
 import uuid
+from datetime import datetime, timezone
 
 from .model import stamp, utcnow
 

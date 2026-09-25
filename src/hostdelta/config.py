@@ -2,8 +2,8 @@
 
 import copy
 import json
-from pathlib import Path
 import re
+from pathlib import Path
 from urllib.parse import urlsplit
 
 DEFAULT = {"version": 1, "interval_seconds": 30, "snapshot_interval_seconds": 900,

@@ -4,12 +4,12 @@ This example writes only temporary HostDelta state. It does not inspect or
 change the current host, invoke a deployment, or use the network.
 """
 
-from datetime import datetime, timedelta, timezone
 import os
-from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from hostdelta.model import stamp
 from hostdelta.store import Store

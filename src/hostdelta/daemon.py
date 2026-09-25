@@ -1,15 +1,15 @@
 """Foreground collector for systemd: single writer, graceful shutdown, durable checkpoints."""
 
-from contextlib import contextmanager
-from datetime import timedelta
 import fcntl
 import hashlib
 import os
 import signal
 import threading
 import time
+from contextlib import contextmanager
+from datetime import timedelta
 
-from . import adapters, health, tail, conntrack
+from . import adapters, conntrack, health, tail
 from .archive import Archive
 from .collect import capture
 from .events import journal

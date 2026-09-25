@@ -3,11 +3,11 @@
 import json
 import os
 import ssl
-from pathlib import Path
 import subprocess
 import sys
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 from .config import url as validate_url
 from .model import stamp, utcnow

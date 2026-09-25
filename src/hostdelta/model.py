@@ -1,8 +1,8 @@
 """Portable data model and deterministic comparison; no collectors or side effects."""
 
-from datetime import datetime, timedelta, timezone
 import re
 import unicodedata
+from datetime import datetime, timedelta, timezone
 
 
 def utcnow():

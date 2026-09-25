@@ -1,10 +1,10 @@
 """Systemd invocation tracking and optional sampled Linux TCP connection events."""
 
 import hashlib
-from pathlib import Path
 import socket
 import struct
 import subprocess
+from pathlib import Path
 
 from .collect import run
 from .model import stamp, utcnow

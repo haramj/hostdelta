@@ -27,3 +27,9 @@ where = ["src"]
 [tool.bandit]
 # Collectors intentionally run fixed argv lists without a shell and resolve tools such as conntrack from PATH.
 skips = ["B404", "B603", "B607"]
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "W", "I", "B", "UP", "C4", "PIE"]

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Build a dependency-free executable archive with Python's standard library."""
-from pathlib import Path
 import shutil
 import tempfile
 import zipapp
+from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 destination = root / "dist" / "hostdelta.pyz"

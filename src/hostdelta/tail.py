@@ -4,15 +4,15 @@ Rotation and copytruncate are best effort, explicitly reported when data is lost
 The caller must commit the returned records and checkpoint in one transaction.
 """
 
-from datetime import datetime, timedelta
 import hashlib
 import json
 import os
-from pathlib import Path
 import stat
 import uuid
+from datetime import datetime, timedelta
+from pathlib import Path
 
-from .model import stamp, utcnow
+from .model import utcnow
 from .requests import parse_line
 from .telemetry import normalize
 

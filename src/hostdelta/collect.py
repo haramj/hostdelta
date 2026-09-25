@@ -1,14 +1,14 @@
 """Read-only Linux state collectors. A failed source never becomes an empty state."""
 
-from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 import os
-from pathlib import Path
 import platform
 import shutil
 import stat
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 from .model import stamp, utcnow
 
