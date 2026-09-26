@@ -1,9 +1,14 @@
 """Private local SQLite storage. Session starts and read cursors are separate."""
 
+import errno
 import json
 import os
 import re
+import shutil
 import sqlite3
+import stat
+import tempfile
+import time
 from pathlib import Path
 
 DEFAULT_WATCH = ["/etc/systemd/system", "/etc/netplan", "/etc/ssh/sshd_config"]
@@ -11,6 +16,77 @@ DEFAULT_WATCH = ["/etc/systemd/system", "/etc/netplan", "/etc/ssh/sshd_config"]
 
 def default_dir():
     return Path(os.environ.get("HOSTDELTA_STATE_DIR", str(Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local/state"))) / "hostdelta")))
+
+
+_LINK_FALLBACK_ERRNOS = {errno.EXDEV, errno.EPERM, errno.EMLINK}
+
+
+def _safe_unlink(path: str) -> None:
+    try:
+        os.unlink(path)
+    except OSError:
+        pass
+
+
+def _publish_no_clobber(tmp_path: str, dest: str) -> None:
+    """
+    Safely install tmp_path at dest without overwriting an existing destination.
+
+    On POSIX (common case, same filesystem), os.link provides an atomic
+    publication of the completed backup file with kernel-enforced EEXIST protection.
+
+    If hard links are restricted (EXDEV/EPERM/EMLINK), the fallback O_EXCL stream
+    copy guarantees strict no-clobber creation (failing atomically if dest exists
+    or is created concurrently), though dest is exposed during streaming copy
+    before completion. Incomplete partial files are unlinked on error.
+    """
+    if os.name == "nt":
+        _publish_no_clobber_windows(tmp_path, dest)
+    else:
+        _publish_no_clobber_posix(tmp_path, dest)
+
+
+def _publish_no_clobber_windows(tmp_path: str, dest: str) -> None:
+    try:
+        os.rename(tmp_path, dest)
+    except FileExistsError as exc:
+        _safe_unlink(tmp_path)
+        raise ValueError(f"Destination file already exists: {dest}") from exc
+
+
+def _publish_no_clobber_posix(tmp_path: str, dest: str) -> None:
+    try:
+        os.link(tmp_path, dest)
+    except FileExistsError as exc:
+        _safe_unlink(tmp_path)
+        raise ValueError(f"Destination file already exists: {dest}") from exc
+    except OSError as exc:
+        if exc.errno not in _LINK_FALLBACK_ERRNOS:
+            raise
+        _publish_via_o_excl(tmp_path, dest)
+        return
+    else:
+        _safe_unlink(tmp_path)
+
+
+def _publish_via_o_excl(tmp_path: str, dest: str) -> None:
+    extra_flags = getattr(os, "O_NOFOLLOW", 0)
+    flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | extra_flags
+    try:
+        mode = stat.S_IMODE(os.stat(tmp_path).st_mode)
+        fd = os.open(dest, flags, mode)
+    except (FileExistsError, IsADirectoryError) as exc:
+        _safe_unlink(tmp_path)
+        raise ValueError(f"Destination file already exists: {dest}") from exc
+
+    try:
+        with open(tmp_path, "rb") as f_in, os.fdopen(fd, "wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
+    except BaseException:
+        _safe_unlink(dest)
+        raise
+    finally:
+        _safe_unlink(tmp_path)
 
 
 class Store:
@@ -72,6 +148,45 @@ class Store:
 
     def close(self):
         self.db.close()
+
+    def backup(self, destination, timeout=30.0):
+        dest = Path(destination).expanduser().absolute()
+        source_path = self.directory / "state.sqlite3"
+
+        if dest.is_symlink() or os.path.islink(dest):
+            raise ValueError(f"Destination path is a symlink: {dest}")
+        if dest == source_path or dest.parent == self.directory:
+            raise ValueError("Destination path cannot alias source database or state directory.")
+        if source_path.exists() and dest.exists() and os.path.samefile(dest, source_path):
+            raise ValueError("Destination path aliases source database.")
+        if dest.exists():
+            raise ValueError(f"Destination file already exists: {dest}")
+        if not dest.parent.is_dir():
+            raise ValueError(f"Destination directory does not exist: {dest.parent}")
+
+        tmp_dir = tempfile.mkdtemp(dir=dest.parent, prefix=".hostdelta-backup-")
+        os.chmod(tmp_dir, 0o700)
+        tmp_file = Path(tmp_dir) / "backup.sqlite3"
+
+        try:
+            target_db = sqlite3.connect(tmp_file, timeout=timeout)
+            try:
+                start_time = time.monotonic()
+                deadline = start_time + float(timeout)
+
+                def progress(status, remaining, total):
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError(f"Backup operation timed out after {timeout}s due to lock contention.")
+
+                self.db.backup(target_db, pages=250, progress=progress, sleep=0.05)
+            finally:
+                target_db.close()
+
+            os.chmod(tmp_file, 0o600)
+            _publish_no_clobber(str(tmp_file), str(dest))
+            return {"version": 1, "status": "success", "destination": str(dest), "size_bytes": dest.stat().st_size}
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
 
     def setting(self, key, default=None):
         row = self.db.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()

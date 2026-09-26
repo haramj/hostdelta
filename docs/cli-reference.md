@@ -32,6 +32,7 @@ for service identities, permissions and backup procedures.
 | `events` | Query retained events, optionally by service, severity or trace ID |
 | `incidents` | Query sampled health incidents overlapping a time window |
 | `prune --keep-days N` | Apply retention; add `--dry-run` to preview affected rows |
+| `backup PATH` | Safely create a point-in-time database backup |
 | `ack --consumer NAME --until TIMESTAMP` | Advance a consumer cursor after successful processing |
 | `record --actor NAME --kind start\|finish\|failure` | Store an explicitly reported agent lifecycle event |
 | `doctor` | Check platform, command availability and initialization readiness |

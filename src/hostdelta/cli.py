@@ -97,6 +97,9 @@ def parser(json_errors=False):
     prune = output("prune", "Apply retention while preserving named checkpoints and open incidents")
     prune.add_argument("--keep-days", type=int, default=30)
     prune.add_argument("--dry-run", action="store_true")
+    backup_cmd = output("backup", "Safely create a point-in-time backup of the database")
+    backup_cmd.add_argument("destination", type=Path, help="Target path for the database backup")
+    backup_cmd.add_argument("--timeout", type=float, default=30.0, help="Total deadline in seconds under lock contention")
     return p
 
 
@@ -318,6 +321,11 @@ fi''')
                      "run_id": args.run_id, "summary": f"{args.actor}: {args.kind}" + (" — " + clean(args.message, 500) if args.message else "")}
             index = store.record(event)
             emit({"schema_version": 1, "type": "record", "id": index, "event": event}, args.json, f"Recorded agent event #{index}")
+        elif args.command == "backup":
+            if args.timeout <= 0:
+                raise ValueError("Timeout must be positive.")
+            result = store.backup(args.destination, timeout=args.timeout)
+            emit(result, args.json, f"Backup saved to {result['destination']} ({result['size_bytes']} bytes)")
         return 0
     finally:
         store.close()

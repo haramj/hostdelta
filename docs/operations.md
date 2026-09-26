@@ -109,27 +109,15 @@ warn if their requested window predates the retention floor. Named snapshots and
 open incidents are retained; review their growth periodically. Increasing retention
 does not restore previously deleted data.
 
-For a consistent online SQLite backup, use its backup API under the same identity:
+For a consistent online SQLite backup, run `hostdelta backup` under the operating identity:
 
-```python
-import os
-import sqlite3
-
-# Use your actual private paths. Run as the state-directory owner.
-source = sqlite3.connect('/private/state/hostdelta/state.sqlite3')
-fd = os.open('/private/backup/hostdelta.sqlite3', os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-os.close(fd)
-destination = sqlite3.connect('/private/backup/hostdelta.sqlite3')
-try:
-    source.backup(destination)
-finally:
-    destination.close()
-    source.close()
+```bash
+hostdelta backup /private/backup/hostdelta.sqlite3 --json
 ```
 
-Do not copy just the main database file while WAL writers are active. Alternatively,
-stop all writers and back up the complete private state directory. Raw source logs
-are not included in the database backup; only collected normalized evidence is.
+`hostdelta backup` uses SQLite's backup API to capture committed WAL state safely. It enforces strict file safety by refusing existing target files, symlinks, and state-directory aliasing. Destination files are created with private permissions (`0o600`). On POSIX systems, it uses atomic `os.link` to publish the completed backup (falling back to strict `O_EXCL` streaming copy on hardlink-restricted mounts). Incomplete backups are automatically unlinked on failure or lock-contention timeout.
+
+Do not copy just the main database file while WAL writers are active. Alternatively, stop all writers and back up the complete private state directory. Raw source logs are not included in the database backup; only collected normalized evidence is.
 
 ## Upgrade and rollback
 
