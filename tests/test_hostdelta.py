@@ -214,6 +214,68 @@ class RequestTests(unittest.TestCase):
             self.assertTrue(any("newest" in w for w in result["warnings"]))
 
 
+    def test_combined_positive_offset_normalizes_to_utc(self):
+        """A +09:00 combined-log line is compared at its UTC instant."""
+        line = (
+            "203.0.113.7 - - [21/Sep/2026:11:30:00 +09:00] "
+            '"GET /reports?token=secret HTTP/1.1" 200 80 "-" "agent"\n'
+        )
+        row = requests.parse_line(line)
+        self.assertEqual(row["at"], "2026-09-21T02:30:00.000000+00:00")
+        self.assertEqual(row["path"], "/reports")
+        self.assertEqual(row["ip"], "203.0.113.7")
+        self.assertNotIn("secret", json.dumps(row))
+
+    def test_combined_positive_offset_crosses_date_boundary(self):
+        """A +09:00 early-morning line is the PREVIOUS UTC date."""
+        line = (
+            "203.0.113.7 - - [21/Sep/2026:03:00:00 +09:00] "
+            '"GET /edge HTTP/1.1" 200 12 "-" "agent"\n'
+        )
+        row = requests.parse_line(line)
+        # 03:00 +09:00 is 18:00 UTC the day before, not the 21st in UTC.
+        self.assertEqual(row["at"], "2026-09-20T18:00:00.000000+00:00")
+
+    def test_combined_negative_offset_crosses_date_boundary(self):
+        """A -05:00 late-evening line is the NEXT UTC date."""
+        line = (
+            "198.51.100.23 - - [22/Sep/2026:20:00:00 -05:00] "
+            '"GET /edge HTTP/1.1" 503 12 "-" "agent"\n'
+        )
+        row = requests.parse_line(line)
+        # 20:00 -05:00 is 01:00 UTC the day after, not the 22nd in UTC.
+        self.assertEqual(row["at"], "2026-09-23T01:00:00.000000+00:00")
+        self.assertEqual(row["status"], 503)
+
+    def test_combined_offset_window_filters_on_utc_instant(self):
+        """analyze() includes a +05:00 line only when its UTC instant is in range."""
+        line = (
+            "192.0.2.44 - - [21/Sep/2026:08:00:00 +05:00] "
+            '"GET /window HTTP/1.1" 200 10 "-" "agent"\n'
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "access.log"
+            path.write_text(line, encoding="utf-8")
+            # 03:00 UTC is inside [START=20th 12:00, NOW=21st 12:00]
+            result = requests.analyze([str(path)], START, NOW)
+            self.assertEqual(result["total"], 1)
+            self.assertEqual(result["top_paths"][0][0], "GET /window")
+            self.assertEqual(result["first_request"], "2026-09-21T03:00:00.000000+00:00")
+            # Shift the window entirely above that instant: nothing matches.
+            empty = requests.analyze([str(path)], NOW + timedelta(hours=1), NOW + timedelta(hours=2))
+            self.assertEqual(empty["total"], 0)
+
+    def test_combined_ipv6_client(self):
+        """An IPv6 client address is retained and validated."""
+        line = (
+            "2001:db8::1 - - [21/Sep/2026:11:00:00 +0000] "
+            '"GET /v6 HTTP/1.1" 200 42 "-" "agent"\n'
+        )
+        row = requests.parse_line(line)
+        self.assertEqual(row["ip"], "2001:db8::1")
+        self.assertEqual(row["path"], "/v6")
+
+
 class JournalTests(unittest.TestCase):
     def row(self, message, **fields):
         return {"MESSAGE": message, "__REALTIME_TIMESTAMP": str(int(NOW.timestamp() * 1e6)), "__CURSOR": "cursor:1", **fields}
