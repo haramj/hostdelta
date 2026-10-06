@@ -213,6 +213,48 @@ class RequestTests(unittest.TestCase):
             self.assertLess(result["total"], 20)
             self.assertTrue(any("newest" in w for w in result["warnings"]))
 
+    def test_corrupt_gzip_reports_unavailable_and_preserves_companion(self):
+        compressed = gzip.compress(self.combined("/compressed", 503).encode())
+        corruptions = {
+            "invalid-header": b"not a gzip stream",
+            "truncated": compressed[:-8],
+            "bad-crc": compressed[:-8] + bytes([compressed[-8] ^ 0xff]) + compressed[-7:],
+        }
+        for name, payload in corruptions.items():
+            with self.subTest(corruption=name), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "access.log"
+                rotated = Path(str(path) + ".1.gz")
+                rotated.write_bytes(payload)
+                unreadable = requests.analyze([str(rotated)], START, NOW)
+                self.assertEqual(unreadable["status"], "unavailable")
+                self.assertEqual(unreadable["files_read"], 0)
+                self.assertEqual(unreadable["total"], 0)
+                self.assertTrue(any(f"Cannot read {rotated}:" in w for w in unreadable["warnings"]))
+
+                path.write_text(self.combined("/readable", 201))
+                result = requests.analyze([str(path)], START, NOW)
+                self.assertEqual(result["files_read"], 1)
+                self.assertEqual(result["total"], 1)
+                self.assertEqual(result["status_codes"], {"201": 1})
+                self.assertEqual(result["top_paths"], [("GET /readable", 1)])
+                self.assertTrue(any(f"Cannot read {rotated}:" in w for w in result["warnings"]))
+
+    def test_bounded_gzip_never_parses_incomplete_record(self):
+        first = self.combined("/complete", 200).encode()
+        second = self.combined("/omitted", 503).encode()
+        for budget, expected in ((len(first) - 4, 0), (len(first) + len(second) - 4, 1)):
+            with self.subTest(budget=budget), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "access.log.gz"
+                path.write_bytes(gzip.compress(first + second))
+                with patch.object(requests, "MAX_BYTES", budget):
+                    result = requests.analyze([str(path)], START, NOW)
+                self.assertEqual(result["files_read"], 1)
+                self.assertEqual(result["total"], expected)
+                self.assertEqual(result["errors_5xx"], 0)
+                self.assertEqual(result["top_paths"], [("GET /complete", 1)] if expected else [])
+                self.assertTrue(any("decompressed scan capped" in w and "omitted" in w for w in result["warnings"]))
+                self.assertFalse(any("malformed" in w for w in result["warnings"]))
+
 
     def test_combined_positive_offset_normalizes_to_utc(self):
         """A +09:00 combined-log line is compared at its UTC instant."""

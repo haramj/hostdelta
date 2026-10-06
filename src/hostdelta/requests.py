@@ -105,7 +105,9 @@ def analyze(configured, since, until):
                 blob = stream.read(MAX_BYTES + 1)
                 if len(blob) > MAX_BYTES:
                     warnings.append(f"{path}: decompressed scan capped at 8 MiB; later records omitted.")
-                    blob = blob[:MAX_BYTES].rsplit(b"\n", 1)[0]
+                    # With no newline inside the budget, no complete record was
+                    # read. A combined-log prefix may otherwise parse as valid.
+                    blob = blob[:MAX_BYTES].rpartition(b"\n")[0]
             summary["files_read"] += 1
             for line in blob.decode("utf-8", errors="replace").splitlines():
                 try:

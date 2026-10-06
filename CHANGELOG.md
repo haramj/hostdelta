@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- Bounded gzip HTTP scans omit an incomplete first record instead of counting a
+  parseable prefix as a request. Regression coverage includes corrupt headers,
+  truncated streams, CRC failures and readable companion logs.
 - Close SQLite fixture connections deterministically so delayed ResourceWarnings
   cannot contaminate unrelated CLI JSON-output assertions in CI.
 - Keep all CI matrix jobs running after a failure for complete diagnostics, and
