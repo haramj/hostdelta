@@ -114,7 +114,9 @@ def read(path, checkpoint=None, kind="application", now=None):
                         if datetime.fromisoformat(event["at"]) > now + timedelta(minutes=5):
                             raise ValueError("Event timestamp is over five minutes in the future")
                         result.append(event)
-                    except (ValueError, KeyError, TypeError, OverflowError, OSError):
+                    except (ValueError, KeyError, TypeError, OverflowError, OSError, RecursionError):
+                        # JSON within the byte limit can still exceed the parser's
+                        # nesting limit. Advance past it like other invalid records.
                         bad += 1
                 if bad:
                     warnings.append(f"Skipped {bad} malformed, oversized, or future-dated records; raw content was not retained.")

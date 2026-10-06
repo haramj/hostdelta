@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- Application log records that exceed the JSON parser's nesting limit are skipped
+  with a coverage warning instead of aborting collection. Subsequent records and
+  durable checkpoint progress are preserved without retaining the malformed text.
 - Close SQLite fixture connections deterministically so delayed ResourceWarnings
   cannot contaminate unrelated CLI JSON-output assertions in CI.
 - Keep all CI matrix jobs running after a failure for complete diagnostics, and
