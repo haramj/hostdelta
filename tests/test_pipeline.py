@@ -159,6 +159,19 @@ class TailTests(unittest.TestCase):
             second = tail.read(self.path, first["checkpoint"])
         self.assertEqual([e["summary"] for e in second["events"]], ["safe"])
 
+    def test_deeply_nested_json_does_not_block_following_records(self):
+        nested = '[' * 2000 + '"private raw content"' + ']' * 2000
+        self.path.write_text(nested + "\n" + json.dumps(application("safe")) + "\n")
+        result = tail.read(self.path)
+        self.assertEqual([e["summary"] for e in result["events"]], ["safe"])
+        self.assertEqual(result["status"], "partial")
+        self.assertTrue(any("Skipped 1 malformed" in w for w in result["warnings"]))
+        self.assertNotIn("private raw content", json.dumps(result))
+        self.assertEqual(result["checkpoint"]["file"]["offset"], self.path.stat().st_size)
+        resumed = tail.read(self.path, result["checkpoint"])
+        self.assertEqual(resumed["events"], [])
+        self.assertEqual(resumed["status"], "ok")
+
     def test_http_persistence_removes_queries(self):
         self.path.write_text('192.0.2.1 - - [21/Sep/2026:00:00:00 +0000] "GET /api?token=SECRET HTTP/1.1" 503 10\n')
         result = tail.read(self.path, kind="http", now=__import__('datetime').datetime.fromisoformat('2026-09-22T00:00:00+00:00'))
