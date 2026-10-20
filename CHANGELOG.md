@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- Archive briefs now require configured-source readiness using the same rules as
+  status, expose per-source and heartbeat reasons, and preserve historical gaps.
+
 - Bounded gzip HTTP scans omit an incomplete first record instead of counting a
   parseable prefix as a request. Regression coverage includes corrupt headers,
   truncated streams, CRC failures and readable companion logs.

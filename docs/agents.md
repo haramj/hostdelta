@@ -99,3 +99,22 @@ floor is surfaced to readers; extending retention cannot recover deleted history
 Treat `service_restart` as at least one new execution, not an exact restart counter.
 Treat outage timestamps as sampled bounds from this observer. `unknown` does not
 close an incident. Never infer global cloud availability from one host's connectivity.
+
+### Archive readiness and historical coverage
+
+`brief --archive` adds `coverage.readiness` with `ready`, `fresh`,
+`heartbeat_assessment`, and `sources`, using the same assessment as `status` at
+`window.until`. Each configured source must have a recent successful run, using
+its configured cadence. Heartbeat reasons include `clock_skew`,
+`invalid_timestamp`, `stopped`, and `last_cycle_unhealthy`; source reasons include
+`never_collected`, `stale`, and `source_unhealthy`. Inspect these reasons and the
+coverage warnings to identify missing or outdated evidence. Removed sources are
+marked `not_configured` and do not block current readiness.
+
+Current readiness is an additional requirement for `coverage.collection_ok`.
+It does not erase partial/unavailable runs in the requested historical window,
+retention gaps, unavailable state domains, or other existing coverage checks.
+`--require-coverage` returns 3 for these gaps, taking precedence over finding
+exit code 2. Archive briefs do not acknowledge consumers or advance SSH sessions.
+A ready collector is not evidence that the observed services are healthy or that
+all historical records were retained.
