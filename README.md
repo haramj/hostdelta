@@ -67,6 +67,9 @@ correlation does not establish that an update caused an incident.
 
 ## Quick start
 
+New here? Follow the [command-by-command first-run guide](docs/first-run.md) for
+installation, initialization, expected output and coverage troubleshooting.
+
 On a Linux host with Git and Python 3.10+ installed:
 
 ```bash
@@ -215,6 +218,7 @@ for source permissions, private state, backups and upgrades.
 
 | Guide | Purpose |
 | --- | --- |
+| [First run](docs/first-run.md) | Copyable installation and initial-report commands, expected results and exit codes |
 | [CLI reference](docs/cli-reference.md) | Commands, timestamps, configuration scope and exit codes |
 | [Continuous collection](docs/collection.md) | Daemon setup, archive queries, restart/outage semantics and TCP modes |
 | [Operations](docs/operations.md) | Service identities, credentials, retention, backup and upgrades |
