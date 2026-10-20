@@ -10,20 +10,17 @@ starting so contributors can avoid duplicating work.
 
 ## Your first contribution
 
-Documentation, reproducible bug reports, sanitized test fixtures, and real-world
-validation reports are as valuable as code. Browse the repository's `good first issue`
-label for bounded tasks and `help wanted` for work that needs community input.
-Comment on an issue if you want to work on it; maintainers can help clarify scope.
-For small corrections, a focused pull request is welcome without opening an issue first.
+### First-Contribution Command Walkthrough
 
-Fork the repository, clone your fork, create a branch, and follow the setup below.
-Open a pull request against `main` and describe what you checked. Draft pull requests
-are welcome for early feedback. Ask usage questions and propose ideas in
-[Discussions](https://github.com/haramj/hostdelta/discussions).
+Follow these steps to set up the project, test changes locally, and open a PR:
 
-For environment validation, follow [the runbook](docs/live-validation.md) and report
-versions, enabled sources, observed results, and gaps. Do not publish raw state
-databases, credentials, private endpoints, or unsanitized production logs.
+1. **Fork and Clone the Repository:**
+   ```bash
+   git clone [https://github.com/](https://github.com/)<YOUR-USERNAME>/hostdelta.git
+   cd hostdelta
+   git remote add upstream [https://github.com/hostdelta/hostdelta.git](https://github.com/hostdelta/hostdelta.git)
+   git fetch upstream
+   git checkout -b my-feature-branch upstream/main
 
 ## Development setup
 
