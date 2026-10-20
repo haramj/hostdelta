@@ -119,3 +119,6 @@ netlink loss and process exits are reported as gaps.
 See [architecture and limits](architecture.md) for bounded reads, checkpoint semantics
 and gap handling; [application logging](application-logging.md) and [adapters](adapters.md)
 cover source-specific configuration.
+
+For definitions and examples of baselines, checkpoints, consumer cursors, coverage
+gaps and observed outage bounds, see the [evidence and coverage glossary](cli-reference.md#evidence-and-coverage-glossary).

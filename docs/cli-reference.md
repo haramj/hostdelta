@@ -43,6 +43,26 @@ to `hostdelta brief`. Data-oriented commands accept `--json`; brief, diff and de
 also offer `--full` for expanded human-readable output. The daemon emits structured
 operational logs to stderr rather than streaming a single CLI result to stdout.
 
+## Evidence and coverage glossary
+
+| Term | Meaning | Example |
+| --- | --- | --- |
+| Evidence | A retained log record, state observation, or sampled probe result supporting a finding. It can be incomplete and contains untrusted source data. | A journal cursor identifies the service-failure record cited by a finding. |
+| Snapshot | Saved observations of selected host state, such as packages and services. It is not an atomic machine image or a VM restore point. | `snapshot --label before-deploy` saves a comparison point; it cannot restore the deployed files. |
+| Baseline | The earlier snapshot used for a state comparison. A brief chooses the closest saved snapshot at or before its event-window start. | A brief starting at 10:00 can use a 09:45 snapshot; its state differences may therefore predate 10:00. |
+| Checkpoint | Saved collection progress for a source, committed with the evidence it produced. This is separate from a consumer's acknowledgement. | A JSONL checkpoint records the file identity and byte offset so the next cycle can resume reading. |
+| Consumer cursor | The acknowledged end time for one named consumer. Reading a report does not move it, and other consumers have independent cursors. | After processing the `ops-agent` report, `ack --consumer ops-agent --until "$REPORT_UNTIL"` advances only that consumer. |
+| Coverage gap | Missing, unreadable, expired, or limited evidence that restricts what the report can establish. | An unreadable application log leaves a gap even when another source reports no errors. |
+| Observed outage bounds | Sampled last-good/first-bad and last-bad/first-good observations that constrain an incident's timing from this observer's perspective. | A good probe at 10:00 and a bad probe at 10:01 bound the observed transition; they do not establish an exact failure time. |
+
+Missing evidence does not prove health. Incident gaps and initially unhealthy targets
+must be considered when interpreting bounds; do not assume continuous failure across
+unobserved periods. Events occurring close together establish temporal correlation,
+not proof that one caused another.
+
+See the [agent contract](agents.md) for acknowledgement semantics and
+[architecture](architecture.md) for durable checkpoints and retention limits.
+
 ## Snapshot comparison
 
 References can be a numeric snapshot ID, a unique label, `HEAD`, or `HEAD~N`.
