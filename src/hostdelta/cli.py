@@ -190,10 +190,17 @@ def briefing(args, store, session=False):
         not any(r["status"] != "ok" for r in coverage) and not (floor and stamp(since) < floor)
     )
     if archived:
-        heartbeat = store.setting("daemon", {})
-        last = heartbeat.get("last_cycle_at")
-        fresh = bool(last) and (until - parse_time(last)).total_seconds() <= heartbeat.get("interval_seconds", 30) * 3
-        result["coverage"]["collection_ok"] = result["coverage"]["collection_ok"] and fresh and not heartbeat.get("stopped_at")
+        status = archive.status(now=until)
+        readiness = {key: status[key] for key in ("ready", "fresh", "heartbeat_assessment", "sources")}
+        result["coverage"]["readiness"] = readiness
+        result["coverage"]["collection_ok"] = result["coverage"]["collection_ok"] and readiness["ready"]
+        if readiness["heartbeat_assessment"]["reason"] != "ok":
+            result["coverage"]["warnings"].append(
+                "Collector heartbeat is not ready: " + readiness["heartbeat_assessment"]["reason"])
+        for source in readiness["sources"]:
+            if source["configured"] and source["reason"] != "ok":
+                result["coverage"]["warnings"].append(
+                    "Configured source is not ready: " + source["source"] + " (" + source["reason"] + ")")
     if session:
         store.begin_session(stamp(now), stamp(fallback))
     emit(result, args.json, render(result, args.full))
