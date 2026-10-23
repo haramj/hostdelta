@@ -1,5 +1,8 @@
 # Structured application logging
 
+For a copyable Linux exercise from log generation through collection and duplicate
+checks, follow the [JSONL walkthrough](jsonl-walkthrough.md).
+
 ## Design
 
 A useful operational record answers six questions: when, which service, what event,

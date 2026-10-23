@@ -43,3 +43,15 @@ jobs:
           hostdelta collect --config examples/hostdelta.json --json > collection.json || test "$?" -eq 3
           hostdelta events --since 1h --json
           hostdelta brief --archive --since 1h --json
+      - name: Run documented JSONL walkthrough
+        if: runner.os == 'Linux'
+        run: |
+          python - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+          guide = Path("docs/jsonl-walkthrough.md").read_text()
+          blocks = re.findall(r"```bash\n(.*?)```", guide, re.S)
+          assert len(blocks) == 6, "Expected all six walkthrough blocks"
+          subprocess.run(["bash", "-eu"], input="\n".join(blocks), text=True, check=True, timeout=180)
+          PY
