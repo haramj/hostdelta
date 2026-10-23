@@ -222,6 +222,7 @@ for source permissions, private state, backups and upgrades.
 | [CLI reference](docs/cli-reference.md) | Commands, timestamps, configuration scope and exit codes |
 | [Continuous collection](docs/collection.md) | Daemon setup, archive queries, restart/outage semantics and TCP modes |
 | [Operations](docs/operations.md) | Service identities, credentials, retention, backup and upgrades |
+| [JSONL walkthrough](docs/jsonl-walkthrough.md) | Isolated synthetic log generation, collection, queries and duplicate checks |
 | [Application logging](docs/application-logging.md) | JSON format, instrumentation, correlation and redaction |
 | [Adapters](docs/adapters.md) | Exact OpenStack/Proxmox API scope and failure interpretation |
 | [Agent contract](docs/agents.md) | JSON, consumer cursors, acknowledgement and retries |
